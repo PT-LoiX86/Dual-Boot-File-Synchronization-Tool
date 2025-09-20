@@ -1,4 +1,4 @@
-# Dual-Boot-File-Synchronization-Tool
+# Dual-Boot File Synchronization Tool
 **About:** An open-source tool for file synchronization when working on dual-boot (Ubuntu (main) - Windows).  
   
 **Docs:** All about the project will be described in the following sheet:   
