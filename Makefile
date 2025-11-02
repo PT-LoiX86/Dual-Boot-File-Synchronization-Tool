@@ -2,8 +2,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -g
 DEBUG_FLAGS = -DDEBUG -g -O0
-INCLUDE_DIRS = -Iinclude -Ithird_party/cjson
-LIB_DIRS = -Lthird_party/cjson
+INCLUDE_DIRS = -Iinclude -Ilibs/cjson
+LIB_DIRS = -Llibs/cjson
 LIBS = -lcjson -lm
 
 # --Directories--
