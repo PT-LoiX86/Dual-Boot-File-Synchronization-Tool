@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "../include/filesystem.h"
 #include "../../include/config.h"
+#include <sync.h>
 
 // DISK / PARTITION CHECKING
 
@@ -154,3 +155,154 @@ int handle_unlink_command(int argc, char *argv[])
     return 0;
 }
 
+// SYNC OPERATIONS
+
+int handle_sync_command(int argc, char *argv[]) 
+{
+    const char *folder_path = NULL;
+    const char *direction_str = NULL;
+    sync_operation_t operation;
+    linked_folders_t folders = {0};
+    folder_link_t *link = NULL;
+    sync_changes_t *changes = NULL;
+    conflict_resolution_t *resolutions = NULL;
+    int resolution_count = 0;
+    
+    printf("DEBUG: Entered handle_sync_command\n");
+    
+    if (argc < 3) 
+    {
+        fprintf(stderr, "Usage: dualsync sync <folder-path> <to-windows|to-ubuntu>\n");
+        return 1;
+    }
+    
+    folder_path = argv[1];
+    direction_str = argv[2];
+    
+    printf("DEBUG: Folder path: %s\n", folder_path);
+    printf("DEBUG: Direction: %s\n", direction_str);
+    
+    if (strcmp(direction_str, "to-windows") == 0) 
+    {
+        operation = SYNC_OP_TO_WINDOWS;
+    } 
+    else if (strcmp(direction_str, "to-ubuntu") == 0) 
+    {
+        operation = SYNC_OP_TO_UBUNTU;
+    } 
+    else 
+    {
+        fprintf(stderr, "Error: Invalid direction. Use 'to-windows' or 'to-ubuntu'\n");
+        return 1;
+    }
+    
+    if (load_config(&folders) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot load configuration\n");
+        return 1;
+    }
+    
+    int link_index = find_existing_link(&folders, folder_path);
+    if (link_index < 0) 
+    {
+        fprintf(stderr, "Error: No link found for path: %s\n", folder_path);
+        free(folders.links);
+        return 1;
+    }
+    
+    link = &folders.links[link_index];
+    
+    printf("DEBUG: Found link: %s\n", link->id);
+    
+    changes = create_sync_changes();
+    if (changes == NULL) 
+    {
+        fprintf(stderr, "Error: Cannot create sync changes structure\n");
+        free(folders.links);
+        return 1;
+    }
+    
+    const char *source = (operation == SYNC_OP_TO_WINDOWS) ? link->ubuntu_path : link->windows_path;
+    const char *target = (operation == SYNC_OP_TO_WINDOWS) ? link->windows_path : link->ubuntu_path;
+    
+    printf("DEBUG: Checking if source folder is empty\n");
+    int source_empty = is_folder_empty(source);
+    if (source_empty == 1) 
+    {
+        printf("\n");
+        printf("╔════════════════════════════════════════════════════════════╗\n");
+        printf("║                    WARNING                                 ║\n");
+        printf("╠════════════════════════════════════════════════════════════╣\n");
+        printf("║                                                            ║\n");
+        printf("║ Source folder is EMPTY!                                   ║\n");
+        printf("║ Path: %s\n", source);
+        printf("║                                                            ║\n");
+        printf("║ Syncing from an empty folder will DELETE all files in     ║\n");
+        printf("║ the target folder!                                        ║\n");
+        printf("║                                                            ║\n");
+        printf("╚════════════════════════════════════════════════════════════╝\n");
+        
+        printf("Continue anyway? (yes/no): ");
+        char response[10];
+        if (fgets(response, sizeof(response), stdin) == NULL ||
+            (strcmp(response, "yes\n") != 0 && strcmp(response, "y\n") != 0))
+        {
+            printf("Sync cancelled\n");
+            free(folders.links);
+            return 1;
+        }
+    }
+
+    if (detect_changes(source, target, changes) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot detect changes\n");
+        free_sync_changes(changes);
+        free(folders.links);
+        return 1;
+    }
+    
+    if (display_sync_preview(changes, source, target) != 0) 
+    {
+        free_sync_changes(changes);
+        free(folders.links);
+        return 1;
+    }
+    
+    if (changes->conflict_count > 0) 
+    {
+        if (resolve_conflicts_interactive(changes, &resolutions, &resolution_count) != 0) 
+        {
+            fprintf(stderr, "Error: Cannot resolve conflicts\n");
+            free_sync_changes(changes);
+            free(folders.links);
+            return 1;
+        }
+    }
+    
+    if (display_final_confirmation(changes, changes->conflict_count) != 0)
+    {
+        free(resolutions);
+        free_sync_changes(changes);
+        free(folders.links);
+        return 1;
+    }
+    
+    int sync_result = perform_sync(link, operation, resolutions, resolution_count);
+        
+    if (sync_result == 0 || sync_result == 1) 
+    {
+        if (save_sync_config(&folders, link) != 0) 
+        {
+            fprintf(stderr, "Warning: Cannot save updated configuration\n");
+        }
+    }
+    
+    if (resolutions != NULL) 
+    {
+        free(resolutions);
+    }
+    free_sync_changes(changes);
+    free(folders.links);
+    
+    return sync_result;
+}

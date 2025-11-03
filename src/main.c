@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 2) 
     {
-        printf("Usage: fsync <command> [options]\n");
+        printf("Usage: dualsync <command> [options]\n");
         printf("Commands:\n");
         printf("  disk              - Check connected disks\n");
         printf("  link              - Link two folders for synchronization\n");
@@ -31,6 +31,12 @@ int main(int argc, char *argv[])
     {
         return handle_unlink_command(argc - 1, argv + 1);
     }
+
+    if (strcmp(argv[1], "sync") == 0) 
+    {
+        return handle_sync_command(argc - 1, argv + 1);
+    }
+
     
     if (strcmp(argv[1], "--help") == 0) 
     {
