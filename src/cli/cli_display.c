@@ -1,6 +1,10 @@
 #include <stdio.h>
+#include <string.h>
 #include "../include/filesystem.h"
+#include "../../include/cli.h"
 
+
+// DISK / PARTITION CHECKING
 
 void print_disk_size(disk_info_t *disk) 
 {
@@ -58,3 +62,116 @@ int display_disk_status(windows_partitions_t *windows_partitions, disk_info_t *u
 
     return 0;
 }
+
+// FOLDER LINKING
+
+int display_link_success(folder_link_t *link) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║             ✓ FOLDER LINK CREATED SUCCESSFULLY             ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║ Link ID: %s\n", link->id);
+    printf("║\n");
+    printf("║ Ubuntu Folder:\n");
+    printf("║   Path: %s\n", link->ubuntu_path);
+    printf("║   UUID: %s\n", link->ubuntu_uuid);
+    printf("║\n");
+    printf("║ Windows Folder:\n");
+    printf("║   Path: %s\n", link->windows_path);
+    printf("║   UUID: %s\n", link->windows_uuid);
+    printf("║   Device: %s\n", link->windows_device);
+    printf("║\n");
+    printf("║ Status: Ready for sync\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("Next steps:\n");
+    printf("  • Run 'dualsync sync <folder-path> to-windows' to sync Ubuntu → Windows\n");
+    printf("  • Run 'dualsync sync <folder-path> to-ubuntu' to sync Windows → Ubuntu\n");
+    printf("  • Run 'dualsync unlink <folder-path>' to remove this link\n\n");
+    
+    return 0;
+}
+
+int display_link_already_exists(folder_link_t *existing_link, 
+                                const char *provided_path, const char *other_path) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                 ⚠️  LINK ALREADY EXISTS                     ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║ This folder is already linked to:\n");
+    printf("║   %s\n", existing_link->ubuntu_path);
+    printf("║            ↕️\n");
+    printf("║   %s\n", existing_link->windows_path);
+    printf("║\n");
+    printf("║ You're trying to link it to:\n");
+    printf("║   %s\n", other_path);
+    printf("║\n");
+    printf("║ Options:\n");
+    printf("║ 1. Use 'dualsync unlink %s' to remove the existing link\n", provided_path);
+    printf("║ 2. Then create a new link with the desired folder\n");
+    printf("║ 3. Or choose different folders to link\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+    
+    return 1;
+}
+
+int display_unlink_confirmation(folder_link_t *link) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║              CONFIRM UNLINK REQUEST                        ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║ You are about to unlink the following folder pair:\n");
+    printf("║\n");
+    printf("║ Ubuntu Folder:\n");
+    printf("║   %s\n", link->ubuntu_path);
+    printf("║\n");
+    printf("║ Windows Folder:\n");
+    printf("║   %s\n", link->windows_path);
+    printf("║\n");
+    printf("║ This will NOT delete any files, only remove the link.\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+    
+    return 0;
+}
+
+int display_verify_link_error(int error_code, folder_link_t *link) 
+{
+    if (error_code == -2) 
+    {
+        char actual_windows_uuid[128] = {0};
+        get_partition_uuid(link->windows_path, actual_windows_uuid, sizeof(actual_windows_uuid));
+        
+        fprintf(stderr, "\n");
+        fprintf(stderr, "╔════════════════════════════════════════════════════════════╗\n");
+        fprintf(stderr, "║                 ERROR: WRONG DISK CONNECTED!               ║\n");
+        fprintf(stderr, "╠════════════════════════════════════════════════════════════╣\n");
+        fprintf(stderr, "║ Expected UUID: %s\n", link->windows_uuid);
+        fprintf(stderr, "║ Found UUID:    %s\n", actual_windows_uuid);
+        fprintf(stderr, "║                                                            ║\n");
+        fprintf(stderr, "║ The Windows partition UUID does not match.                 ║\n");
+        fprintf(stderr, "║ Please connect the correct external disk.                  ║\n");
+        fprintf(stderr, "╚════════════════════════════════════════════════════════════╝\n\n");
+        return -1;
+    }
+
+    else if (error_code == -1) 
+    {
+        fprintf(stderr, "\n");
+        fprintf(stderr, "╔════════════════════════════════════════════════════════════╗\n");
+        fprintf(stderr, "║              ERROR: FOLDERS NOT ACCESSIBLE                 ║\n");
+        fprintf(stderr, "╠════════════════════════════════════════════════════════════╣\n");
+        fprintf(stderr, "║ Ubuntu folder: %s\n", link->ubuntu_path);
+        fprintf(stderr, "║ Windows folder: %s\n", link->windows_path);
+        fprintf(stderr, "║                                                            ║\n");
+        fprintf(stderr, "║ One or both folders are not accessible.                    ║\n");
+        fprintf(stderr, "║ Please check if folders exist and are properly mounted.    ║\n");
+        fprintf(stderr, "╚════════════════════════════════════════════════════════════╝\n\n");
+        return -1;
+    }
+    
+    return 0;
+}
+
