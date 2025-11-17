@@ -35,7 +35,7 @@ All changes must be committed into develop branch, not main.
     make debug        # Build with debugging symbols and no optimization
     make test         # Compile and run all tests
     make clean        # Remove all build files
-    make install      # Install fsync to /usr/local/bin/
+    make install      # Install dualsync to /usr/local/bin/
     make format       # Auto-format all source code
 
 ### Third-Party Dependencies
@@ -56,4 +56,4 @@ These are automatically downloaded when you clone with `--recurse-submodules` or
 ### Building for Debug
 
     make debug
-    ./build/fsync
+    ./build/dualsync

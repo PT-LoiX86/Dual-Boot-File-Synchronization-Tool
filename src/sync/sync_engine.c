@@ -6,9 +6,11 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
+#include <sync.h>
 #include "../../include/filesystem.h"
 #include "../../include/cli.h"
-#include <sync.h>
+#include "../../include/backup.h"
+#include "../../include/sync.h"
 
 static int ensure_directory_exists(const char *dirpath) 
 {
@@ -165,6 +167,15 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
         free_sync_changes(changes);
         return -1;
     }
+
+    printf("\nDEBUG: Creating backup before sync\n");
+    if (backup_before_sync(link, operation) != 0) 
+    {
+        fprintf(stderr, "Error: Failed to create backup\n");
+        free_sync_changes(changes);
+        return -1; 
+    }
+
     
     total_items = changes->count;
     printf("DEBUG: Total items to process: %d\n", total_items);
@@ -307,8 +318,14 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
     
     if (error_count > 0) 
     {
-        printf("Sync completed with %d error(s)\n", error_count);
-        return 1;
+        printf("\nDEBUG: Sync had errors, attempting auto-restore\n");
+        if (restore_on_sync_failure(link, operation) != 0) 
+        {
+            fprintf(stderr, "CRITICAL: Both sync and restore failed!\n");
+            fprintf(stderr, "Manual intervention required.\n");
+        }
+        free_sync_changes(changes);
+        return -1;
     }
     
     return 0;

@@ -6,14 +6,14 @@
 #include "../../include/config.h"
 #include <sync.h>
 
-// DISK / PARTITION CHECKING
+// ============ DISK / PARTITION CHECKING ============
 
 int handle_disk_command() 
 {
     return check_disk_status();
 }
 
-// FOLDER LINKING
+// ============ FOLDER LINKING ============
 
 int handle_link_command(int argc, char *argv[]) 
 {
@@ -155,7 +155,28 @@ int handle_unlink_command(int argc, char *argv[])
     return 0;
 }
 
-// SYNC OPERATIONS
+int handle_links_list_command(int argc, char *argv[]) 
+{
+    linked_folders_t folders = {0};
+    
+    printf("DEBUG: Entered handle_links_list_command\n");
+    (void)argc;
+    (void)argv;
+    
+    if (load_config(&folders) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot load configuration\n");
+        return 1;
+    }
+    
+    display_linked_folders(&folders);
+    
+    free(folders.links);
+    return 0;
+}
+
+
+// ============ SYNC OPERATIONS ============
 
 int handle_sync_command(int argc, char *argv[]) 
 {
@@ -305,4 +326,188 @@ int handle_sync_command(int argc, char *argv[])
     free(folders.links);
     
     return sync_result;
+}
+
+// ============ BACKUP OPERATIONS ============
+
+int handle_backups_list_command(int argc, char *argv[]) 
+{
+    linked_folders_t folders = {0};
+    backup_list_t backup_list = {0};
+    
+    printf("DEBUG: Entered handle_backups_list_command\n");
+    
+    if (argc < 1) 
+    {
+        printf("DEBUG: No link_id provided, showing all backups\n");
+        
+        if (load_config(&folders) != 0) 
+        {
+            fprintf(stderr, "Error: Cannot load configuration\n");
+            return 1;
+        }
+        
+        if (folders.count == 0) 
+        {
+            printf("No linked folders found\n");
+            free(folders.links);
+            return 0;
+        }
+        
+        for (int i = 0; i < folders.count; i++) 
+        {
+            memset(&backup_list, 0, sizeof(backup_list));
+            if (list_backups(folders.links[i].id, &backup_list) != 0) 
+            {
+                fprintf(stderr, "Error: Cannot list backups for link: %s\n", folders.links[i].id);
+            }
+            free_backup_list(&backup_list);
+        }
+        
+        free(folders.links);
+        return 0;
+    }
+    
+    const char *link_id = argv[0];
+    printf("DEBUG: Listing backups for link: %s\n", link_id);
+    
+    memset(&backup_list, 0, sizeof(backup_list));
+    if (list_backups(link_id, &backup_list) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot list backups\n");
+        free_backup_list(&backup_list);
+        return 1;
+    }
+    
+    free_backup_list(&backup_list);
+    return 0;
+}
+
+
+int handle_backup_command(int argc, char *argv[]) 
+{
+    linked_folders_t folders = {0};
+    const char *target_path = NULL;
+    folder_link_t *link = NULL;
+    char backup_id[256];
+    
+    printf("DEBUG: Entered handle_backup_command\n");
+    
+    if (argc < 1) 
+    {
+        fprintf(stderr, "Usage: dualsync backup <target_path>\n");
+        return 1;
+    }
+    
+    target_path = argv[0];
+    printf("DEBUG: Backing up target: %s\n", target_path);
+    
+    if (load_config(&folders) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot load configuration\n");
+        return 1;
+    }
+    
+    for (int i = 0; i < folders.count; i++) 
+    {
+        if (strcmp(folders.links[i].ubuntu_path, target_path) == 0 ||
+            strcmp(folders.links[i].windows_path, target_path) == 0) {
+            link = &folders.links[i];
+            break;
+        }
+    }
+    
+    if (link == NULL) 
+    {
+        fprintf(stderr, "Error: No link found for path: %s\n", target_path);
+        free(folders.links);
+        return 1;
+    }
+    
+    printf("DEBUG: Found link: %s\n", link->id);
+
+    char numeric_link_id[256];
+    const char *id_ptr = link->id;
+    if (strncmp(id_ptr, "link_", 5) == 0) 
+    {
+        strncpy(numeric_link_id, id_ptr + 5, sizeof(numeric_link_id) - 1);  // Skip "link_"
+    } 
+    else 
+    {
+        strncpy(numeric_link_id, id_ptr, sizeof(numeric_link_id) - 1);
+    }
+    numeric_link_id[sizeof(numeric_link_id) - 1] = '\0';
+    
+    if (create_backup(target_path, numeric_link_id, backup_id) != 0) 
+    {
+        fprintf(stderr, "Error: Failed to create backup\n");
+        free(folders.links);
+        return 1;
+    }
+    
+    free(folders.links);
+    return 0;
+}
+
+int handle_restore_command(int argc, char *argv[]) 
+{
+    const char *backup_id = NULL;
+    
+    printf("DEBUG: Entered handle_restore_command\n");
+    
+    if (argc < 1) 
+    {
+        fprintf(stderr, "Usage: dualsync restore <backup_id>\n");
+        fprintf(stderr, "Example: dualsync restore link_1762187634_Windows_20251117_153000\n");
+        return 1;
+    }
+    
+    backup_id = argv[0];
+    printf("DEBUG: Restoring backup: %s\n", backup_id);
+    
+    int result = restore_backup(backup_id);
+    
+    if (result == 1) 
+    {
+        printf("Restore cancelled by user\n");
+        return 0;
+    } 
+    else if (result != 0) 
+    {
+        fprintf(stderr, "Error: Failed to restore backup\n");
+        return 1;
+    }
+    
+    return 0;
+}
+
+int handle_backups_clean_command(int argc, char *argv[]) 
+{
+    const char *link_id = NULL;
+    
+    printf("DEBUG: Entered handle_backups_clean_command\n");
+    
+    if (argc < 1) 
+    {
+        fprintf(stderr, "Usage: dualsync backups-clean <link_id>\n");
+        return 1;
+    }
+    
+    link_id = argv[0];
+    printf("DEBUG: Cleaning backups for link: %s\n", link_id);
+    
+    int result = cleanup_backups(link_id);
+    
+    if (result == 1) 
+    {
+        printf("Cleanup cancelled by user\n");
+        return 0;
+    } 
+    else if (result != 0) 
+    {
+        fprintf(stderr, "Error: Failed to clean backups\n");
+        return 1;
+    }
+    
+    return 0;
 }

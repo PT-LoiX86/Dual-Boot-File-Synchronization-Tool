@@ -5,7 +5,7 @@
 #include "../../include/cli.h"
 
 
-// DISK / PARTITION CHECKING
+// ============ DISK / PARTITION CHECKING ============
 
 void print_disk_size(disk_info_t *disk) 
 {
@@ -64,7 +64,7 @@ int display_disk_status(windows_partitions_t *windows_partitions, disk_info_t *u
     return 0;
 }
 
-// FOLDER LINKING
+// ============ FOLDER LINKING ============
 
 int display_link_success(folder_link_t *link) 
 {
@@ -176,7 +176,37 @@ int display_verify_link_error(int error_code, folder_link_t *link)
     return 0;
 }
 
-// SYNC OPERATIONS
+int display_linked_folders(linked_folders_t *folders) 
+{
+    if (folders == NULL || folders->count == 0) 
+    {
+        printf("No linked folders found\n");
+        return 0;
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    printf("                          LINKED FOLDERS\n");
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    printf("%-35s %-25s %-25s\n", "ID", "Ubuntu Path", "Windows Path");
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    
+    for (int i = 0; i < folders->count; i++) 
+    {
+        printf("%-35s %-25s %-25s\n",
+               folders->links[i].id,
+               folders->links[i].ubuntu_path,
+               folders->links[i].windows_path);
+    }
+    
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    printf("Total: %d linked folder(s)\n", folders->count);
+    printf("════════════════════════════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+// ============ SYNC OPERATIONS ============
 
 static void format_size(unsigned long bytes, char *buffer, size_t buf_size) 
 {
@@ -433,3 +463,200 @@ int display_sync_error_prompt(const char *filepath, const char *error_msg)
         return -1;
     }
 }
+
+// ============ BACKUP OPERATIONS ============
+
+int display_backup_created(const char *backup_id, const char *backup_path, off_t size) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                    BACKUP CREATED\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Backup ID:    %s\n", backup_id);
+    printf("Location:     %s\n", backup_path);
+    printf("Size:         %.2f MB\n", size / (1024.0 * 1024.0));
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_restore_confirmation(const char *backup_id, const char *target_path) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                  RESTORE BACKUP?                          ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║                                                            ║\n");
+    printf("║ Backup ID:    %s\n", backup_id);
+    printf("║ Target Path:  %s\n", target_path);
+    printf("║                                                            ║\n");
+    printf("║ WARNING: This will OVERWRITE all files in target folder!  ║\n");
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n");
+    
+    printf("Continue? (yes/no): ");
+    
+    return 0;
+}
+
+int display_restore_successful(const char *backup_id, const char *target_path) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                   RESTORE SUCCESSFUL\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Restored from: %s\n", backup_id);
+    printf("Target path:   %s\n", target_path);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_backup_list(const char *link_id, backup_list_t *backup_list) 
+{
+    if (backup_list == NULL || backup_list->count == 0 || backup_list->backups == NULL) 
+    {
+        printf("No backups found for link: %s\n", link_id);
+        return 0;
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    printf("                  BACKUPS FOR: %s\n", link_id);
+    printf("════════════════════════════════════════════════════════════════════════════════════\n\n");
+    
+    printf("%-45s %-20s %-12s\n", "Backup ID", "Created", "Size");
+    printf("════════════════════════════════════════════════════════════════════════════════════\n");
+    
+    for (int i = 0; i < backup_list->count; i++) 
+    {
+        char *last_underscore = strrchr(backup_list->backups[i].backup_id, '_');
+        char *second_last_underscore = NULL;
+        
+        if (last_underscore != NULL) 
+        {
+            *last_underscore = '\0';
+            second_last_underscore = strrchr(backup_list->backups[i].backup_id, '_');
+            *last_underscore = '_';
+        }
+        
+        char timestamp_str[20] = "Unknown";
+        if (last_underscore != NULL && second_last_underscore != NULL) 
+        {
+            const char *date_part = second_last_underscore + 1;
+            const char *time_part = last_underscore + 1;
+            
+            if (strlen(date_part) > 8 && strlen(time_part) > 5) 
+            {
+                snprintf(timestamp_str, sizeof(timestamp_str), "%s %s", date_part, time_part);
+            }
+        }
+        
+        printf("%-45s %-20s %.2f MB\n",
+               backup_list->backups[i].backup_id,
+               timestamp_str,
+               backup_list->backups[i].size / (1024.0 * 1024.0));
+    }
+    
+    printf("════════════════════════════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+
+
+
+int display_cleanup_confirmation(const char *link_id, int backup_count) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║              DELETE ALL BACKUPS?                          ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║                                                            ║\n");
+    printf("║ Link ID:      %s\n", link_id);
+    printf("║ Backups:      %d\n", backup_count);
+    printf("║                                                            ║\n");
+    printf("║ WARNING: This action CANNOT be undone!                    ║\n");
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n");
+    
+    printf("Continue? (yes/no): ");
+    
+    return 0;
+}
+
+int display_cleanup_successful(const char *link_id, int deleted_count) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                 BACKUPS DELETED\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Link ID:       %s\n", link_id);
+    printf("Deleted:       %d backup(s)\n", deleted_count);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_backup_error(const char *error_msg) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                   ERROR                                    ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║                                                            ║\n");
+    printf("║ %s\n", error_msg);
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+    
+    return 0;
+}
+
+int display_auto_restore_start(const char *backup_id) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                  SYNC FAILED - AUTO-RESTORING\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Attempting to restore from latest backup...\n");
+    printf("Backup ID: %s\n", backup_id);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_auto_restore_successful(const char *backup_id) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                 AUTO-RESTORE SUCCESSFUL\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Restored backup: %s\n", backup_id);
+    printf("Original state restored. Please investigate sync error.\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_auto_restore_failed(const char *backup_id) 
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                   CRITICAL ERROR!                         ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║                                                            ║\n");
+    printf("║ Sync FAILED and AUTO-RESTORE also FAILED!                 ║\n");
+    printf("║                                                            ║\n");
+    printf("║ Your target folder may be in an inconsistent state.       ║\n");
+    printf("║                                                            ║\n");
+    printf("║ Backup ID (for manual restoration):                       ║\n");
+    printf("║ %s\n", backup_id);
+    printf("║                                                            ║\n");
+    printf("║ Manual restore command:                                   ║\n");
+    printf("║ dualsync restore %s                           ║\n", backup_id);
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+    
+    return 0;
+}
+

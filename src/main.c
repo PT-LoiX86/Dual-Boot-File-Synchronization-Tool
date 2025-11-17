@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
         printf("  link              - Link two folders for synchronization\n");
         printf("  unlink            - Remove a folder link\n");
         printf("  sync              - Synchronize linked folders\n");
-        printf("  status            - Check link status\n");
         printf("  --help            - Show help\n");
         return 1;
     }
@@ -32,6 +31,12 @@ int main(int argc, char *argv[])
         return handle_unlink_command(argc - 1, argv + 1);
     }
 
+    if (strcmp(argv[1], "links-list") == 0)
+    {
+        return handle_links_list_command(argc - 2, argv + 2);
+    }
+
+
     if (strcmp(argv[1], "sync") == 0) 
     {
         return handle_sync_command(argc - 1, argv + 1);
@@ -44,6 +49,26 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    printf("Unknown command: %s\n", argv[1]);
+    if (strcmp(argv[1], "backups-list") == 0) 
+    {
+        return handle_backups_list_command(argc - 2, argv + 2);
+    }
+
+    if (strcmp(argv[1], "backup") == 0) 
+    {
+        return handle_backup_command(argc - 2, argv + 2);
+    }
+
+    if (strcmp(argv[1], "restore") == 0) 
+    {
+        return handle_restore_command(argc - 2, argv + 2);
+    }
+
+    if (strcmp(argv[1], "backups-clean") == 0) 
+    {
+        return handle_backups_clean_command(argc - 2, argv + 2);
+    }
+    
+    fprintf(stderr, "Unknown command: %s\n", argv[1]);
     return 1;
 }
