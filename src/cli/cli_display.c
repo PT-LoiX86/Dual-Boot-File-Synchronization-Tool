@@ -734,3 +734,24 @@ int display_log_tracking_end(void)
     
     return 0;
 }
+
+int display_log_latest(const char *log_path) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                  LATEST LOG ENTRIES\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    char command[PATH_MAX + 64];
+    snprintf(command, sizeof(command), "tail -20 '%s'", log_path);
+    
+    if (system(command) != 0) 
+    {
+        printf("(No log entries yet)\n");
+    }
+    
+    printf("\n════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+

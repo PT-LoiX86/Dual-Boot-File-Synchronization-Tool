@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
     {
         if (argc < 3) 
         {
-            fprintf(stderr, "Usage: dualsync log <--list | --since <DD/MM/YYYY> | --track>\n");
-            return 1;
+            printf("DEBUG: No log subcommand, showing latest log file content\n");
+            return handle_log_latest_command(0, NULL);
         }
         
         if (strcmp(argv[2], "--list") == 0) 

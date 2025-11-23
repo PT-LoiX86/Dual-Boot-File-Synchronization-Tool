@@ -605,3 +605,17 @@ int handle_log_track_command(int argc, char *argv[])
     return 0;
 }
 
+int handle_log_latest_command(int argc, char *argv[]) 
+{
+    printf("DEBUG: Entered handle_log_latest_command\n");
+    (void)argc;
+    (void)argv;
+    
+    if (display_latest_log() != 0) 
+    {
+        fprintf(stderr, "Error: Cannot display latest log\n");
+        return 1;
+    }
+    
+    return 0;
+}

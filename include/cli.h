@@ -54,6 +54,11 @@ int display_log_list(char **log_files, int log_count);
 int display_log_list_since(char **log_files, int log_count, const char *date_str);
 int display_log_tracking_start(void);
 int display_log_tracking_end(void);
+int display_log_latest(const char *log_path);
 
+int handle_log_track_command(int argc, char *argv[]);
+int handle_log_since_command(int argc, char *argv[]);
+int handle_log_latest_command(int argc, char *argv[]);
+int handle_log_list_command(int argc, char *argv[]);
 
 #endif

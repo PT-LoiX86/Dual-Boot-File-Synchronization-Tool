@@ -29,5 +29,6 @@ int get_log_file_path(char *log_path, size_t max_len);
 int list_log_files(void);
 int list_logs_since(const char *date_str);
 int track_logs(void);
+int display_latest_log(void);
 
 #endif

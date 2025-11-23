@@ -309,3 +309,24 @@ int track_logs(void)
     
     return result;
 }
+
+int display_latest_log(void) 
+{
+    char log_path[PATH_MAX];
+    if (get_log_file_path(log_path, sizeof(log_path)) != 0) 
+    {
+        return -1;
+    }
+    
+    struct stat stat_buf;
+    if (stat(log_path, &stat_buf) != 0) 
+    {
+        printf("No log file found\n");
+        return 0;
+    }
+    
+    display_log_latest(log_path);
+    
+    return 0;
+}
+
