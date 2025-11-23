@@ -1,0 +1,6 @@
+[submodule "libs/cjson"]
+	path = libs/cjson
+	url = https://github.com/DaveGamble/cJSON
+[submodule "libs/sha256"]
+	path = libs/sha256
+	url = https://github.com/LekKit/sha256
