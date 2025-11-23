@@ -49,5 +49,11 @@ int handle_backup_command(int argc, char *argv[]);
 int handle_restore_command(int argc, char *argv[]);
 int handle_backups_clean_command(int argc, char *argv[]);
 
+// ============ LOGGING ============
+int display_log_list(char **log_files, int log_count);
+int display_log_list_since(char **log_files, int log_count, const char *date_str);
+int display_log_tracking_start(void);
+int display_log_tracking_end(void);
+
 
 #endif

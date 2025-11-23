@@ -660,3 +660,77 @@ int display_auto_restore_failed(const char *backup_id)
     return 0;
 }
 
+// ============ LOG DISPLAY FUNCTIONS ============
+
+int display_log_list(char **log_files, int log_count) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                    ALL LOGS (oldest-latest)\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    if (log_count == 0 || log_files == NULL) 
+    {
+        printf("No logs found\n");
+    } 
+    else 
+    {
+        for (int i = 0; i < log_count; i++) {
+            printf("%d. %s\n", i + 1, log_files[i]);
+        }
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Total: %d log file(s)\n", log_count);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_log_list_since(char **log_files, int log_count, const char *date_str) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("              LOGS SINCE: %s\n", date_str);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    if (log_count == 0 || log_files == NULL) 
+    {
+        printf("No logs found since %s\n", date_str);
+    } 
+    else 
+    {
+        for (int i = 0; i < log_count; i++) 
+        {
+            printf("%d. %s\n", i + 1, log_files[i]);
+        }
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Total: %d log file(s) since %s\n", log_count, date_str);
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_log_tracking_start(void) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("              TRACKING LOGS (Press Ctrl+C to exit)\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_log_tracking_end(void) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                   TRACKING STOPPED\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}

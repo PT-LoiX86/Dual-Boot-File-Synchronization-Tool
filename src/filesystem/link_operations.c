@@ -4,7 +4,7 @@
 #include <time.h>
 #include "../../include/filesystem.h"
 #include "../../include/utils.h"
-
+#include "../../include/logger.h"
 
 int validate_folders_for_linking(const char *ubuntu_path, const char *windows_path) 
 {
@@ -58,6 +58,10 @@ int create_folder_link(const char *ubuntu_path, const char *windows_path,
     if (validate_folders_for_linking(ubuntu_path, windows_path) != 0) 
     {
         printf("DEBUG: Validation failed\n");
+
+        log_operation(LOG_OP_LINK_CREATE, "N/A", LOG_STATUS_FAILURE, 
+                  "Validation failed for the provided paths");
+
         return -1;
     }
     printf("DEBUG: Validation passed\n");
@@ -104,6 +108,12 @@ int create_folder_link(const char *ubuntu_path, const char *windows_path,
     new_link->status = 0;
     
     printf("DEBUG: Folder link created with ID: %s\n", new_link->id);
+
+    char details[256];
+    snprintf(details, sizeof(details), "Ubuntu: %s | Windows: %s", 
+            ubuntu_path, windows_path);
+    log_operation(LOG_OP_LINK_CREATE, new_link->id, LOG_STATUS_SUCCESS, details);
+
     return 0;
 }
 

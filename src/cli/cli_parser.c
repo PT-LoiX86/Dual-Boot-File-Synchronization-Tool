@@ -2,9 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include "cli.h"
+#include <sync.h>
+
 #include "../include/filesystem.h"
 #include "../../include/config.h"
-#include <sync.h>
+#include "../../include/logger.h"
+
 
 // ============ DISK / PARTITION CHECKING ============
 
@@ -111,6 +114,10 @@ int handle_unlink_command(int argc, char *argv[])
     if (load_config(&folders) != 0) 
     {
         fprintf(stderr, "Error: Cannot load configuration\n");
+        
+        log_operation(LOG_OP_LINK_DELETE, "N/A", LOG_STATUS_FAILURE, 
+                      "Cannot load configuration");
+        
         return 1;
     }
     
@@ -118,9 +125,21 @@ int handle_unlink_command(int argc, char *argv[])
     if (link_index < 0) 
     {
         fprintf(stderr, "Error: No link found for path: %s\n", folder_path);
+        
+        log_operation(LOG_OP_LINK_DELETE, "N/A", LOG_STATUS_FAILURE, 
+                      "No link found for path");
+        
         free(folders.links);
         return 1;
     }
+
+    char link_id[256];
+    char ubuntu_path[PATH_MAX];
+    char windows_path[PATH_MAX];
+    
+    strncpy(link_id, folders.links[link_index].id, sizeof(link_id) - 1);
+    strncpy(ubuntu_path, folders.links[link_index].ubuntu_path, sizeof(ubuntu_path) - 1);
+    strncpy(windows_path, folders.links[link_index].windows_path, sizeof(windows_path) - 1);
     
     display_unlink_confirmation(&folders.links[link_index]);
     
@@ -129,6 +148,10 @@ int handle_unlink_command(int argc, char *argv[])
     if (fgets(response, sizeof(response), stdin) == NULL) 
     {
         printf("Unlink cancelled\n");
+
+        log_operation(LOG_OP_LINK_DELETE, link_id, LOG_STATUS_WARNING, 
+                      "Unlink cancelled by user (fgets - internal error)");
+
         free(folders.links);
         return 1;
     }
@@ -136,6 +159,10 @@ int handle_unlink_command(int argc, char *argv[])
     if (strcmp(response, "yes\n") != 0 && strcmp(response, "y\n") != 0) 
     {
         printf("Unlink cancelled\n");
+
+        log_operation(LOG_OP_LINK_DELETE, link_id, LOG_STATUS_WARNING, 
+                      "Unlink cancelled by user");
+
         free(folders.links);
         return 1;
     }
@@ -145,11 +172,20 @@ int handle_unlink_command(int argc, char *argv[])
     if (save_config(&folders) != 0) 
     {
         fprintf(stderr, "Error: Cannot save configuration\n");
+
+        log_operation(LOG_OP_LINK_DELETE, link_id, LOG_STATUS_FAILURE, 
+                      "Cannot save configuration after removal");
+
         free(folders.links);
         return 1;
     }
     
     printf("\n✓ Folder pair unlinked successfully\n\n");
+
+    char details[512];
+    snprintf(details, sizeof(details), "Ubuntu: %s | Windows: %s", 
+             ubuntu_path, windows_path);
+    log_operation(LOG_OP_LINK_DELETE, link_id, LOG_STATUS_SUCCESS, details);
     
     free(folders.links);
     return 0;
@@ -511,3 +547,61 @@ int handle_backups_clean_command(int argc, char *argv[])
     
     return 0;
 }
+
+// ============ LOGGING ============
+
+int handle_log_list_command(int argc, char *argv[]) 
+{
+    printf("DEBUG: Entered handle_log_list_command\n");
+    (void)argc;
+    (void)argv;
+    
+    if (list_all_logs() != 0) 
+    {
+        fprintf(stderr, "Error: Cannot list logs\n");
+        return 1;
+    }
+    
+    return 0;
+}
+
+int handle_log_since_command(int argc, char *argv[]) 
+{
+    printf("DEBUG: Entered handle_log_since_command\n");
+    
+    if (argc < 1) 
+    {
+        fprintf(stderr, "Usage: dualsync log --since DD/MM/YYYY\n");
+        fprintf(stderr, "Example: dualsync log --since 23/11/2025\n");
+        return 1;
+    }
+    
+    const char *date_str = argv[0];
+    printf("DEBUG: Listing logs since: %s\n", date_str);
+    
+    if (list_logs_since(date_str) != 0) 
+    {
+        fprintf(stderr, "Error: Cannot list logs since %s\n", date_str);
+        return 1;
+    }
+    
+    return 0;
+}
+
+int handle_log_track_command(int argc, char *argv[]) 
+{
+    printf("DEBUG: Entered handle_log_track_command\n");
+    (void)argc;
+    (void)argv;
+    
+    printf("DEBUG: Starting log tracking\n");
+    
+    if (track_logs() != 0) 
+    {
+        fprintf(stderr, "Error: Cannot track logs\n");
+        return 1;
+    }
+    
+    return 0;
+}
+

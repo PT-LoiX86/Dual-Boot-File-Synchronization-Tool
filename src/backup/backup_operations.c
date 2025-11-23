@@ -9,10 +9,10 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <limits.h>
-
 #include "../../include/backup.h"
 #include "../../include/cli.h"
 #include "../../include/config.h"
+#include "../../include/logger.h"
 
 static int get_backup_directory(const char *link_id, const char *location, 
                                 char *backup_dir, size_t max_len) 
@@ -221,11 +221,20 @@ int create_backup(const char *target_path, const char *link_id,
     if (stat(backup_file, &stat_buf) != 0) 
     {
         fprintf(stderr, "Error: Backup file not created\n");
+
+        log_operation(LOG_OP_BACKUP, link_id, LOG_STATUS_FAILURE, 
+                  "Failed to create tar archive");
+
         return -1;
     }
     
     snprintf(backup_id_out, 256, "link_%s_%s_%s", link_id, location, timestamp);
     
+    char details[256];
+    snprintf(details, sizeof(details), "Location: %s | Size: %.2f MB", 
+            location, stat_buf.st_size / (1024.0 * 1024.0));
+    log_operation(LOG_OP_BACKUP, link_id, LOG_STATUS_SUCCESS, details);
+
     display_backup_created(backup_id_out, backup_file, stat_buf.st_size);
     
     return 0;
@@ -335,9 +344,18 @@ int restore_backup(const char *backup_id)
     if (system(command) != 0) 
     {
         fprintf(stderr, "Error: Failed to restore backup\n");
+
+        log_operation(LOG_OP_RESTORE, link->id, LOG_STATUS_FAILURE, 
+                  "Failed to extract backup archive");
+
         free(folders.links);
         return -1;
     }
+
+    char details[256];
+    snprintf(details, sizeof(details), "Restored to: %s | From: %s", 
+            target_path, backup_id);
+    log_operation(LOG_OP_RESTORE, link->id, LOG_STATUS_SUCCESS, details);
     
     display_restore_successful(backup_id, target_path);
     
@@ -545,6 +563,10 @@ int cleanup_backups(const char *link_id)
         (strcmp(response, "yes\n") != 0 && strcmp(response, "y\n") != 0)) 
     {
         printf("Cleanup cancelled\n");
+
+        log_operation(LOG_OP_CLEANUP, link_id, LOG_STATUS_WARNING, 
+                  "Cleanup cancelled by user");
+                  
         free_backup_list(&backup_list);
         return 1;
     }
@@ -575,6 +597,10 @@ int cleanup_backups(const char *link_id)
     
     snprintf(rmdir_command, sizeof(rmdir_command), "rmdir '%s' 2>/dev/null", backups_dir);
     system(rmdir_command);
+
+    char details[256];
+    snprintf(details, sizeof(details), "Deleted %d backup(s)", deleted_count);
+    log_operation(LOG_OP_CLEANUP, link_id, LOG_STATUS_SUCCESS, details);
     
     display_cleanup_successful(link_id, deleted_count);
     

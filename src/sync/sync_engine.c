@@ -11,6 +11,7 @@
 #include "../../include/cli.h"
 #include "../../include/backup.h"
 #include "../../include/sync.h"
+#include "../../include/logger.h"
 
 static int ensure_directory_exists(const char *dirpath) 
 {
@@ -309,9 +310,23 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
     
     display_sync_summary(changes, source_path, target_path, error_count);
     
-    if (log_sync_operation(link, operation, changes, (error_count == 0)) != 0) 
+    char details[512];
+    int files_added = changes->new_count;
+    int files_updated = changes->modified_count;
+    int files_deleted = changes->deleted_count;
+
+    snprintf(details, sizeof(details), 
+            "Direction: %s | Added: %d, Updated: %d, Deleted: %d",
+            (operation == SYNC_OP_TO_WINDOWS) ? "Ubuntu→Windows" : "Windows→Ubuntu",
+            files_added, files_updated, files_deleted);
+
+    if (error_count == 0) 
     {
-        fprintf(stderr, "Warning: Cannot log sync operation\n");
+        log_operation(LOG_OP_SYNC, link->id, LOG_STATUS_SUCCESS, details);
+    } 
+    else 
+    {
+        log_operation(LOG_OP_SYNC, link->id, LOG_STATUS_FAILURE, details);
     }
         
     free_sync_changes(changes);
@@ -470,67 +485,5 @@ int verify_sync_completion(const char *target_path, sync_changes_t *changes)
     }
     
     printf("DEBUG: Sync verification successful\n");
-    return 0;
-}
-
-int log_sync_operation(folder_link_t *link, sync_operation_t operation, 
-                       sync_changes_t *changes, int success) 
-{
-    FILE *log_file;
-    char log_path[PATH_MAX];
-    const char *log_dir = "~/.dualsync/logs";
-    char log_dir_expanded[PATH_MAX];
-    char timestamp[64];
-    time_t now = time(NULL);
-    struct tm *timeinfo = localtime(&now);
-    
-    printf("DEBUG: Logging sync operation\n");
-    
-    if (log_dir[0] == '~') 
-    {
-        const char *home = getenv("HOME");
-        if (home == NULL) 
-        {
-            fprintf(stderr, "Warning: Cannot get HOME directory\n");
-            return -1;
-        }
-        snprintf(log_dir_expanded, sizeof(log_dir_expanded), "%s/.dualsync/logs", home);
-    } 
-    else 
-    {
-        strncpy(log_dir_expanded, log_dir, sizeof(log_dir_expanded) - 1);
-    }
-    
-    char mkdir_cmd[PATH_MAX + 16];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "mkdir -p '%s'", log_dir_expanded);
-    system(mkdir_cmd);
-    
-    strftime(timestamp, sizeof(timestamp), "%Y%m%d", timeinfo);
-    snprintf(log_path, sizeof(log_path), "%s/sync_%s.log", log_dir_expanded, timestamp);
-    
-    log_file = fopen(log_path, "a");
-    if (log_file == NULL) 
-    {
-        fprintf(stderr, "Warning: Cannot open log file: %s\n", log_path);
-        return -1;
-    }
-    
-    time_t raw_time = time(NULL);
-    struct tm *tm_info = localtime(&raw_time);
-    char time_str[32];
-    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-    
-    fprintf(log_file, "[%s] Link: %s | Operation: %s | Status: %s | Added: %d | Updated: %d | Deleted: %d\n",
-            time_str,
-            link->id,
-            (operation == SYNC_OP_TO_WINDOWS) ? "to-windows" : "to-ubuntu",
-            success ? "SUCCESS" : "FAILED",
-            changes->new_count,
-            changes->modified_count,
-            changes->deleted_count);
-    
-    fclose(log_file);
-    
-    printf("DEBUG: Sync operation logged to: %s\n", log_path);
     return 0;
 }

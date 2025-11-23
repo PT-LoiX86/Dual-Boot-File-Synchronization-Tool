@@ -68,6 +68,34 @@ int main(int argc, char *argv[])
     {
         return handle_backups_clean_command(argc - 2, argv + 2);
     }
+
+    if (strcmp(argv[1], "log") == 0) 
+    {
+        if (argc < 3) 
+        {
+            fprintf(stderr, "Usage: dualsync log <--list | --since <DD/MM/YYYY> | --track>\n");
+            return 1;
+        }
+        
+        if (strcmp(argv[2], "--list") == 0) 
+        {
+            return handle_log_list_command(argc - 3, argv + 3);
+        }
+        
+        if (strcmp(argv[2], "--since") == 0) 
+        {
+            return handle_log_since_command(argc - 3, argv + 3);
+        }
+        
+        if (strcmp(argv[2], "--track") == 0) 
+        {
+            return handle_log_track_command(argc - 3, argv + 3);
+        }
+        
+        fprintf(stderr, "Unknown log command: %s\n", argv[2]);
+        fprintf(stderr, "Usage: dualsync log <--list | --since <DD/MM/YYYY> | --track>\n");
+        return 1;
+    }
     
     fprintf(stderr, "Unknown command: %s\n", argv[1]);
     return 1;
