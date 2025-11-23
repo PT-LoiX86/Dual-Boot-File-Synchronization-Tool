@@ -12,6 +12,7 @@
 #include "../../include/backup.h"
 #include "../../include/sync.h"
 #include "../../include/logger.h"
+#include "../../include/converter.h"
 
 static int ensure_directory_exists(const char *dirpath) 
 {
@@ -264,7 +265,7 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
                     (strcmp(response, "yes\n") != 0 && strcmp(response, "y\n") != 0)) 
                 {
                     printf("Skipping delete\n");
-                    operation_result = 0;  // Skip, don't treat as error
+                    operation_result = 0;
                 } 
                 else 
                 {
@@ -328,7 +329,37 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
     {
         log_operation(LOG_OP_SYNC, link->id, LOG_STATUS_FAILURE, details);
     }
+
+    conversion_mappings_t mappings = {0};
+
+    const char *sync_direction = (operation == SYNC_OP_TO_WINDOWS) ? 
+                                "ubuntu_to_windows" : "windows_to_ubuntu";
+    
+    if (load_conversion_mappings(sync_direction, &mappings) == 0) 
+    {
+        if (needs_conversion(target_path, &mappings)) 
+        {
+            convertible_files_list_t files_list = {0};
+            if (find_convertible_files(target_path, &mappings, &files_list) == 0 &&
+                files_list.count > 0) 
+                {
+                
+                display_conversion_prompt(&files_list);
+                
+                char response[10];
+                if (fgets(response, sizeof(response), stdin) != NULL &&
+                    (strcmp(response, "yes\n") == 0 || strcmp(response, "y\n") == 0)) 
+                {
+                    convert_files(target_path, &files_list, &mappings, link->id);
+                }
+                
+                free_convertible_files_list(&files_list);
+            }
+        }
         
+        free_conversion_mappings(&mappings);
+    }
+  
     free_sync_changes(changes);
     
     if (error_count > 0) 
@@ -432,7 +463,6 @@ int display_sync_summary(sync_changes_t *changes, const char *source,
     return 0;
 }
 
-// Save updated configuration to file
 int save_sync_config(linked_folders_t *folders, folder_link_t *updated_link) 
 {
     if (folders == NULL || updated_link == NULL) 

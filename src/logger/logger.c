@@ -22,6 +22,7 @@ static const char* get_operation_name(log_operation_type operation)
         case LOG_OP_LINK_CREATE:  return "LINK_CREATE";
         case LOG_OP_LINK_DELETE:  return "LINK_DELETE";
         case LOG_OP_CLEANUP:      return "CLEANUP";
+        case LOG_OP_CONVERT:      return "CONVERT";
         case LOG_OP_ERROR:        return "ERROR";
         default:                  return "UNKNOWN";
     }

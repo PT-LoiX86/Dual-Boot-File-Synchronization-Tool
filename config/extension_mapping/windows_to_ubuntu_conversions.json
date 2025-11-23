@@ -1,0 +1,22 @@
+{
+  "conversions": [
+    {
+      "source_ext": "docx",
+      "target_ext": "pdf",
+      "application": "libreoffice",
+      "command": "libreoffice --headless --convert-to pdf"
+    },
+    {
+      "source_ext": "pptx",
+      "target_ext": "pdf",
+      "application": "libreoffice",
+      "command": "libreoffice --headless --convert-to pdf"
+    },
+    {
+      "source_ext": "xlsx",
+      "target_ext": "pdf",
+      "application": "libreoffice",
+      "command": "libreoffice --headless --convert-to pdf"
+    }
+  ]
+}

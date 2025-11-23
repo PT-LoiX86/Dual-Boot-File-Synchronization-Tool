@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../include/filesystem.h"
+#include "../../include/filesystem.h"
 #include "../../include/cli.h"
+#include "../../include/converter.h"
 
 
 // ============ DISK / PARTITION CHECKING ============
@@ -751,6 +752,115 @@ int display_log_latest(const char *log_path)
     }
     
     printf("\n════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+// ============ CONVERTER ============
+
+int display_conversion_prompt(const convertible_files_list_t *files_list) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                    FILE CONVERSION\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    printf("Found %d convertible file(s):\n\n", files_list->count);
+    
+    for (int i = 0; i < files_list->count; i++) 
+    {
+        char filename_only[PATH_MAX];
+        const char *basename = strrchr(files_list->files[i].filename, '/');
+        if (basename != NULL) 
+        {
+            basename++;
+            strncpy(filename_only, basename, sizeof(filename_only) - 1);
+        } 
+        else 
+        {
+            strncpy(filename_only, files_list->files[i].filename, sizeof(filename_only) - 1);
+        }
+        
+        printf("  • %s → %s/%s.%s\n", 
+               filename_only,
+               files_list->files[i].target_folder,
+               filename_only,
+               files_list->files[i].target_ext);
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("Convert these files? (yes/no): ");
+    
+    return 0;
+}
+
+int display_conversion_start(void) 
+{
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("                  CONVERTING FILES\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    return 0;
+}
+
+int display_conversion_progress(int current_file, int total_files, 
+                                const char *filename, const char *target_ext) 
+{
+    int progress_percent = (current_file * 100) / total_files;
+    int bar_length = 20;
+    int filled = (progress_percent * bar_length) / 100;
+    
+    printf("\r[");
+    for (int i = 0; i < bar_length; i++) 
+    {
+        if (i < filled) 
+        {
+            printf("█");
+        } 
+        else 
+        {
+            printf("░");
+        }
+    }
+    printf("] %d/%d Converting: %s → %s", current_file, total_files, 
+           filename, target_ext);
+    fflush(stdout);
+    
+    return 0;
+}
+
+int display_conversion_app_not_found(const char *app_name, const char *filename) 
+{
+    printf("\n");
+    printf("⚠ Warning: %s not installed, skipping: %s\n", app_name, filename);
+    
+    return 0;
+}
+
+int display_conversion_completed(int success_count, int fail_count, int skip_count) 
+{
+    printf("\n\n");
+    printf("════════════════════════════════════════════════════════════\n");
+    printf("              CONVERSION COMPLETED\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
+    
+    printf("Results:\n");
+    printf("  ✓ Converted:  %d file(s)\n", success_count);
+    
+    if (fail_count > 0) 
+    {
+        printf("  ✗ Failed:     %d file(s)\n", fail_count);
+    }
+    
+    if (skip_count > 0) 
+    {
+        printf("  ⊘ Skipped:    %d file(s)\n", skip_count);
+    }
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════════════\n\n");
     
     return 0;
 }

@@ -11,6 +11,7 @@ typedef enum
     LOG_OP_LINK_CREATE,
     LOG_OP_LINK_DELETE,
     LOG_OP_CLEANUP,
+    LOG_OP_CONVERT,
     LOG_OP_ERROR
 } 
 log_operation_type;

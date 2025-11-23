@@ -1,9 +1,9 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "filesystem.h"
-#include "../include/filesystem.h"
-#include "backup.h"
+#include "../../include/filesystem.h"
+#include "../../include/backup.h"
+#include "../../include/converter.h"
 
 // ============ DISK / PARTITION CHECKING ============
 
@@ -60,5 +60,14 @@ int handle_log_track_command(int argc, char *argv[]);
 int handle_log_since_command(int argc, char *argv[]);
 int handle_log_latest_command(int argc, char *argv[]);
 int handle_log_list_command(int argc, char *argv[]);
+
+// ============ CONVERTER ============
+int display_conversion_prompt(const convertible_files_list_t *files_list);
+int display_conversion_start(void);
+int display_conversion_progress(int current_file, int total_files, 
+                                const char *filename, const char *target_ext);
+int display_conversion_app_not_found(const char *app_name, const char *filename);
+int display_conversion_completed(int success_count, int fail_count, int skip_count);
+
 
 #endif
