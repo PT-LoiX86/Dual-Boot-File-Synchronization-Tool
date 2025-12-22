@@ -123,7 +123,7 @@ int log_operation(log_operation_type operation, const char *link_id,
     
     fclose(log_file);
     
-    printf("DEBUG: Logged operation: %s\n", op_name);
+    //printf("DEBUG: Logged operation: %s\n", op_name);
     
     return 0;
 }

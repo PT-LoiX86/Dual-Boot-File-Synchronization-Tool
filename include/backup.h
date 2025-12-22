@@ -2,6 +2,7 @@
 #define BACKUP_H
 
 #include "filesystem.h"
+#include "sync.h"
 
 typedef struct 
 {
@@ -50,10 +51,6 @@ int cleanup_backups(const char *link_id);
 
 int get_latest_backup(const char *link_id, const char *location, 
                       char *backup_id_out);
-
-int backup_before_sync(folder_link_t *link, sync_operation_t operation);
-
-int restore_on_sync_failure(folder_link_t *link, sync_operation_t operation);
 
 int restore_backup_silent(const char *backup_id);
 

@@ -27,7 +27,7 @@ static int get_backup_directory(const char *link_id, const char *location,
     snprintf(backup_dir, max_len, "%s/.dualsync/backups/link_%s/%s", 
              home, link_id, location);
     
-    printf("DEBUG: Backup directory: %s\n", backup_dir);
+    //printf("DEBUG: Backup directory: %s\n", backup_dir);
     return 0;
 }
 
@@ -88,7 +88,7 @@ int parse_backup_id(const char *backup_id, backup_id_t *parsed)
         return -1;
     }
     
-    printf("DEBUG: Parsing backup ID: %s\n", backup_id);
+    //printf("DEBUG: Parsing backup ID: %s\n", backup_id);
     
     // Format: link_<link_id>_<location>_<timestamp>
     // Example: link_1762187634_Windows_20251117_153000
@@ -134,8 +134,8 @@ int parse_backup_id(const char *backup_id, backup_id_t *parsed)
     strncpy(parsed->timestamp, ptr, sizeof(parsed->timestamp) - 1);
     parsed->timestamp[sizeof(parsed->timestamp) - 1] = '\0';
     
-    printf("DEBUG: Parsed - link_id: %s, location: %s, timestamp: %s\n",
-           parsed->link_id, parsed->location, parsed->timestamp);
+    //printf("DEBUG: Parsed - link_id: %s, location: %s, timestamp: %s\n",
+           //parsed->link_id, parsed->location, parsed->timestamp);
     
     return 0;
 }
@@ -503,13 +503,13 @@ int list_backups(const char *link_id, backup_list_t *backup_list)
     memcpy(backup_list->backups, temp_backups, sizeof(backup_info_t) * total_count);
     backup_list->count = total_count;
     
-    printf("DEBUG: About to call display_backup_list\n");
-    printf("DEBUG: backup_list->count = %d\n", backup_list->count);
-    printf("DEBUG: backup_list->backups = %p\n", (void*)backup_list->backups);
+    //printf("DEBUG: About to call display_backup_list\n");
+    //printf("DEBUG: backup_list->count = %d\n", backup_list->count);
+    //printf("DEBUG: backup_list->backups = %p\n", (void*)backup_list->backups);
 
     display_backup_list(link_id, backup_list);
 
-    printf("DEBUG: Returned from display_backup_list\n");
+    //printf("DEBUG: Returned from display_backup_list\n");
     
     return 0;
 }
@@ -671,40 +671,7 @@ int get_latest_backup(const char *link_id, const char *location,
     return 0;
 }
 
-int backup_before_sync(folder_link_t *link, sync_operation_t operation) 
-{
-    const char *target_path = NULL;
-    char backup_id[256];
-    
-    printf("DEBUG: backup_before_sync called\n");
-    
-    if (link == NULL) 
-    {
-        fprintf(stderr, "Error: Invalid link\n");
-        return -1;
-    }
-    
-    if (operation == SYNC_OP_TO_WINDOWS) 
-    {
-        target_path = link->windows_path;
-    } 
-    else 
-    {
-        target_path = link->ubuntu_path;
-    }
-    
-    printf("DEBUG: Backing up target folder: %s\n", target_path);
-    
-    if (create_backup(target_path, link->id, backup_id) != 0) 
-    {
-        fprintf(stderr, "Error: Failed to create backup\n");
-        return -1;
-    }
-    
-    printf("DEBUG: Backup created successfully: %s\n", backup_id);
-    
-    return 0;
-}
+
 
 int restore_backup_silent(const char *backup_id) 
 {
@@ -717,7 +684,7 @@ int restore_backup_silent(const char *backup_id)
     const char *target_path = NULL;
     char parent_dir[PATH_MAX];
     
-    printf("DEBUG: Restoring backup silently: %s\n", backup_id);
+    //printf("DEBUG: Restoring backup silently: %s\n", backup_id);
     
     if (parse_backup_id(backup_id, &parsed) != 0) 
     {
@@ -745,26 +712,26 @@ int restore_backup_silent(const char *backup_id)
     {
         const char *link_id_ptr = folders.links[i].id;
         
-        printf("DEBUG: Checking link[%d]: '%s'\n", i, folders.links[i].id);
+        //printf("DEBUG: Checking link[%d]: '%s'\n", i, folders.links[i].id);
         
         if (strncmp(link_id_ptr, "link_", 5) == 0) 
         {
             link_id_ptr += 5;
         }
         
-        printf("DEBUG: Comparing '%s' (from link) with '%s' (parsed)\n", link_id_ptr, parsed.link_id);
+        //printf("DEBUG: Comparing '%s' (from link) with '%s' (parsed)\n", link_id_ptr, parsed.link_id);
         
         if (strcmp(link_id_ptr, parsed.link_id) == 0) 
         {
             link = &folders.links[i];
-            printf("DEBUG: Found matching link: %s\n", folders.links[i].id);
+            //printf("DEBUG: Found matching link: %s\n", folders.links[i].id);
             break;
         }
     }
 
     if (link == NULL) 
     {
-        printf("DEBUG: Link not found. Available links:\n");
+        //printf("DEBUG: Link not found. Available links:\n");
         for (int i = 0; i < folders.count; i++) 
         {
             printf("  - %s\n", folders.links[i].id);
@@ -784,7 +751,7 @@ int restore_backup_silent(const char *backup_id)
         target_path = link->ubuntu_path;
     }
     
-    printf("DEBUG: Target path: %s\n", target_path);
+    //printf("DEBUG: Target path: %s\n", target_path);
     
     strncpy(parent_dir, target_path, sizeof(parent_dir) - 1);
     char *last_slash = strrchr(parent_dir, '/');
@@ -795,7 +762,7 @@ int restore_backup_silent(const char *backup_id)
     
     char rm_command[PATH_MAX + 16];
     snprintf(rm_command, sizeof(rm_command), "rm -rf '%s'", target_path);
-    printf("DEBUG: Removing existing folder\n");
+    //printf("DEBUG: Removing existing folder\n");
     
     if (system(rm_command) != 0) 
     {
@@ -807,7 +774,7 @@ int restore_backup_silent(const char *backup_id)
     snprintf(command, sizeof(command), "cd '%s' && tar -xzf '%s' 2>&1", 
              parent_dir, backup_path);
     
-    printf("DEBUG: Extracting backup\n");
+    //printf("DEBUG: Extracting backup\n");
     
     if (system(command) != 0) 
     {
@@ -820,51 +787,4 @@ int restore_backup_silent(const char *backup_id)
     return 0;
 }
 
-int restore_on_sync_failure(folder_link_t *link, sync_operation_t operation)
-{
-    const char *location = NULL;
-    char backup_id[256];
-    
-    printf("DEBUG: restore_on_sync_failure called\n");
-    
-    if (link == NULL) 
-    {
-        fprintf(stderr, "Error: Invalid link\n");
-        return -1;
-    }
-    
-    if (operation == SYNC_OP_TO_WINDOWS) 
-    {
-        location = "Windows";
-    } 
-    else 
-    {
-        location = "Ubuntu";
-    }
-    
-    printf("DEBUG: Finding latest backup for location: %s\n", location);
-    
-    if (get_latest_backup(link->id, location, backup_id) != 0) 
-    {
-        fprintf(stderr, "Error: No backup found for restoration\n");
-        return -1;
-    }
-    
-    printf("DEBUG: Found latest backup: %s\n", backup_id);
-    
-    display_auto_restore_start(backup_id);
-    
-    if (restore_backup_silent(backup_id) != 0) 
-    {
-        fprintf(stderr, "Error: Failed to restore backup\n");
-        fprintf(stderr, "CRITICAL: Sync failed AND restore failed!\n");
-        fprintf(stderr, "Target folder may be in inconsistent state.\n");
-        fprintf(stderr, "Please manually restore from backup: %s\n", backup_id);
-        display_auto_restore_failed(backup_id);
-        return -1;
-    }
-    
-    display_auto_restore_successful(backup_id);
-    
-    return 0;
-}
+

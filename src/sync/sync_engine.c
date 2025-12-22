@@ -6,13 +6,15 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
-#include <sync.h>
+#include <asm-generic/fcntl.h>
+
 #include "../../include/filesystem.h"
 #include "../../include/cli.h"
 #include "../../include/backup.h"
 #include "../../include/sync.h"
 #include "../../include/logger.h"
 #include "../../include/converter.h"
+
 
 static int ensure_directory_exists(const char *dirpath) 
 {
@@ -38,7 +40,7 @@ static int copy_file(const char *source, const char *dest)
 {
     char command[PATH_MAX * 2 + 32];
     
-    printf("DEBUG: Copying file: %s → %s\n", source, dest);
+    //printf("DEBUG: Copying file: %s → %s\n", source, dest);
     
     char dest_dir[PATH_MAX];
     strncpy(dest_dir, dest, sizeof(dest_dir) - 1);
@@ -65,7 +67,7 @@ static int delete_file(const char *filepath)
 {
     char command[PATH_MAX + 16];
     
-    printf("DEBUG: Deleting file: %s\n", filepath);
+    //printf("DEBUG: Deleting file: %s\n", filepath);
     
     snprintf(command, sizeof(command), "rm -f '%s'", filepath);
     
@@ -109,7 +111,7 @@ static int rename_file_with_timestamp(const char *filepath)
         snprintf(new_path, sizeof(new_path), "%s/%s_%s%s", dir, name_only, timestamp, ext);
     }
     
-    printf("DEBUG: Renaming file: %s → %s\n", filepath, new_path);
+    //printf("DEBUG: Renaming file: %s → %s\n", filepath, new_path);
     
     snprintf(command, sizeof(command), "mv '%s' '%s'", filepath, new_path);
     
@@ -132,30 +134,30 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
     int current_item = 0;
     int error_count = 0;
     
-    printf("DEBUG: perform_sync called\n");
-    printf("DEBUG: Operation: %d\n", operation);
+    //printf("DEBUG: perform_sync called\n");
+    //printf("DEBUG: Operation: %d\n", operation);
     
     if (operation == SYNC_OP_TO_WINDOWS) 
     {
         source_path = link->ubuntu_path;
         target_path = link->windows_path;
-        printf("DEBUG: Syncing Ubuntu → Windows\n");
+        //printf("DEBUG: Syncing Ubuntu → Windows\n");
     } 
     else 
     {
         source_path = link->windows_path;
         target_path = link->ubuntu_path;
-        printf("DEBUG: Syncing Windows → Ubuntu\n");
+        //printf("DEBUG: Syncing Windows → Ubuntu\n");
     }
     
-    printf("DEBUG: Verifying folder link...\n");
+    //printf("DEBUG: Verifying folder link...\n");
     if (verify_folder_link_accessible(link) != 0) 
     {
         fprintf(stderr, "Error: Cannot access one or both folders\n");
         return -1;
     }
     
-    printf("DEBUG: Detecting changes...\n");
+    //printf("DEBUG: Detecting changes...\n");
     changes = create_sync_changes();
     if (changes == NULL) 
     {
@@ -180,7 +182,7 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
 
     
     total_items = changes->count;
-    printf("DEBUG: Total items to process: %d\n", total_items);
+    //printf("DEBUG: Total items to process: %d\n", total_items);
     
     printf("\n");
     printf("════════════════════════════════════════════════════════════\n");
@@ -370,7 +372,6 @@ int perform_sync(folder_link_t *link, sync_operation_t operation,
             fprintf(stderr, "CRITICAL: Both sync and restore failed!\n");
             fprintf(stderr, "Manual intervention required.\n");
         }
-        free_sync_changes(changes);
         return -1;
     }
     
@@ -386,7 +387,7 @@ int update_sync_link(folder_link_t *link, sync_changes_t *changes)
         return -1;
     }
     
-    printf("DEBUG: Updating sync link information\n");
+    //printf("DEBUG: Updating sync link information\n");
     
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);
@@ -395,7 +396,7 @@ int update_sync_link(folder_link_t *link, sync_changes_t *changes)
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", timeinfo);
     strncpy(link->last_sync, timestamp, sizeof(link->last_sync) - 1);
     
-    printf("DEBUG: Updated last_sync: %s\n", link->last_sync);
+    //printf("DEBUG: Updated last_sync: %s\n", link->last_sync);
     
     return 0;
 }
@@ -420,49 +421,6 @@ static void format_size(unsigned long bytes, char *buffer, size_t buf_size)
     }
 }
 
-int display_sync_summary(sync_changes_t *changes, const char *source, 
-                         const char *target, int error_count) 
-{
-    char new_size_str[32];
-    char modified_size_str[32];
-    char deleted_size_str[32];
-    
-    format_size(changes->new_size, new_size_str, sizeof(new_size_str));
-    format_size(changes->modified_size, modified_size_str, sizeof(modified_size_str));
-    format_size(changes->deleted_size, deleted_size_str, sizeof(deleted_size_str));
-    
-    printf("\n");
-    printf("╔════════════════════════════════════════════════════════════╗\n");
-    printf("║                   SYNC COMPLETED                           ║\n");
-    printf("╠════════════════════════════════════════════════════════════╣\n");
-    printf("║                                                            ║\n");
-    printf("║ Source:  %s\n", source);
-    printf("║ Target:  %s\n", target);
-    printf("║                                                            ║\n");
-    printf("║ Summary:                                                   ║\n");
-    printf("║  • Files added:    %3d files (%s)\n", changes->new_count, new_size_str);
-    printf("║  • Files updated:  %3d files (%s)\n", changes->modified_count, modified_size_str);
-    printf("║  • Files deleted:  %3d files (%s)\n", changes->deleted_count, deleted_size_str);
-    
-    if (error_count > 0) 
-    {
-        printf("║  • Errors:         %3d file(s)\n", error_count);
-        printf("║                                                            ║\n");
-        printf("║ Status: COMPLETED WITH ERRORS                             ║\n");
-    } 
-    else 
-    {
-        printf("║                                                            ║\n");
-        printf("║ Status: SUCCESS                                            ║\n");
-    }
-    
-    printf("║                                                            ║\n");
-    printf("╚════════════════════════════════════════════════════════════╝\n");
-    printf("\n");
-    
-    return 0;
-}
-
 int save_sync_config(linked_folders_t *folders, folder_link_t *updated_link) 
 {
     if (folders == NULL || updated_link == NULL) 
@@ -470,14 +428,14 @@ int save_sync_config(linked_folders_t *folders, folder_link_t *updated_link)
         return -1;
     }
     
-    printf("DEBUG: Saving updated configuration\n");
+    //printf("DEBUG: Saving updated configuration\n");
     
     for (int i = 0; i < folders->count; i++) 
     {
         if (strcmp(folders->links[i].id, updated_link->id) == 0) 
         {
             folders->links[i] = *updated_link;
-            printf("DEBUG: Found and updated link at index %d\n", i);
+            //printf("DEBUG: Found and updated link at index %d\n", i);
             break;
         }
     }
@@ -488,7 +446,7 @@ int save_sync_config(linked_folders_t *folders, folder_link_t *updated_link)
         return -1;
     }
     
-    printf("DEBUG: Configuration saved successfully\n");
+    //printf("DEBUG: Configuration saved successfully\n");
     return 0;
 }
 
@@ -499,7 +457,7 @@ int verify_sync_completion(const char *target_path, sync_changes_t *changes)
         return -1;
     }
     
-    printf("DEBUG: Verifying sync completion\n");
+    //printf("DEBUG: Verifying sync completion\n");
     
     struct stat stat_buf;
     if (stat(target_path, &stat_buf) != 0) 
@@ -514,6 +472,6 @@ int verify_sync_completion(const char *target_path, sync_changes_t *changes)
         return -1;
     }
     
-    printf("DEBUG: Sync verification successful\n");
+    //printf("DEBUG: Sync verification successful\n");
     return 0;
 }

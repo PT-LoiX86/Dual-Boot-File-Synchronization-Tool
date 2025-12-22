@@ -22,7 +22,7 @@ static int get_conversion_mapping_file(const char *sync_direction,
         return -1;
     }
     
-    printf("DEBUG: Current working directory: %s\n", cwd);
+    //printf("DEBUG: Current working directory: %s\n", cwd);
     
     if (strcmp(sync_direction, "windows_to_ubuntu") == 0) 
     {
@@ -40,7 +40,7 @@ static int get_conversion_mapping_file(const char *sync_direction,
         return -1;
     }
     
-    printf("DEBUG: Looking for config file at: %s\n", filepath);
+    //printf("DEBUG: Looking for config file at: %s\n", filepath);
     
     return 0;
 }
@@ -57,7 +57,7 @@ int load_conversion_mappings(const char *sync_direction,
         return -1;
     }
     
-    printf("DEBUG: Loading conversion mappings from: %s\n", filepath);
+    //printf("DEBUG: Loading conversion mappings from: %s\n", filepath);
     
     if (stat(filepath, &stat_buf) != 0) 
     {
@@ -148,7 +148,7 @@ int load_conversion_mappings(const char *sync_direction,
     
     cJSON_Delete(json);
     
-    printf("DEBUG: Loaded %d conversion mappings\n", mappings->count);
+    //printf("DEBUG: Loaded %d conversion mappings\n", mappings->count);
     
     return 0;
 }
@@ -236,7 +236,7 @@ static int scan_directory_recursive(const char *dir_path,
         
         if (S_ISDIR(stat_buf.st_mode)) 
         {
-            printf("DEBUG: Scanning subdirectory: %s\n", full_path);
+            //printf("DEBUG: Scanning subdirectory: %s\n", full_path);
             scan_directory_recursive(full_path, mappings, temp_files, temp_count, max_files, base_path);
         } 
         else if (S_ISREG(stat_buf.st_mode)) 
@@ -248,7 +248,7 @@ static int scan_directory_recursive(const char *dir_path,
                 conversion_mapping_t *mapping = find_mapping(mappings, ext);
                 if (mapping != NULL) 
                 {
-                    printf("DEBUG: Found convertible file: %s\n", full_path);
+                    //printf("DEBUG: Found convertible file: %s\n", full_path);
                     
                     strncpy(temp_files[*temp_count].filename, full_path, PATH_MAX - 1);
                     strncpy(temp_files[*temp_count].source_ext, ext, sizeof(temp_files[0].source_ext) - 1);
@@ -277,7 +277,7 @@ int find_convertible_files(const char *target_path,
                            const conversion_mappings_t *mappings,
                            convertible_files_list_t *files_list) 
 {
-    printf("DEBUG: Scanning for convertible files in: %s\n", target_path);
+    //printf("DEBUG: Scanning for convertible files in: %s\n", target_path);
     
     files_list->files = NULL;
     files_list->count = 0;
@@ -290,7 +290,7 @@ int find_convertible_files(const char *target_path,
     
     if (temp_count == 0) 
     {
-        printf("DEBUG: No convertible files found\n");
+        //printf("DEBUG: No convertible files found\n");
         return 0;
     }
     
@@ -304,7 +304,7 @@ int find_convertible_files(const char *target_path,
     memcpy(files_list->files, temp_files, sizeof(convertible_file_t) * temp_count);
     files_list->count = temp_count;
     
-    printf("DEBUG: Found %d convertible files\n", files_list->count);
+    //printf("DEBUG: Found %d convertible files\n", files_list->count);
     
     return 0;
 }
@@ -416,7 +416,7 @@ int convert_files(const char *target_path,
     int fail_count = 0;
     int skip_count = 0;
     
-    printf("DEBUG: Starting conversion of %d files\n", files_list->count);
+    //printf("DEBUG: Starting conversion of %d files\n", files_list->count);
     
     display_conversion_start();
     

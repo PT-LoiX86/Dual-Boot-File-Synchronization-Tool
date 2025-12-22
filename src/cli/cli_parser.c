@@ -23,7 +23,7 @@ int handle_link_command(int argc, char *argv[])
     const char *ubuntu_path = NULL;
     const char *windows_path = NULL;
     
-    printf("DEBUG: Entered handle_link_command\n");
+    ////printf("DEBUG: Entered handle_link_command\n");
     
     if (argc < 3) 
     {
@@ -34,8 +34,8 @@ int handle_link_command(int argc, char *argv[])
     ubuntu_path = argv[1];
     windows_path = argv[2];
     
-    printf("DEBUG: Ubuntu path: %s\n", ubuntu_path);
-    printf("DEBUG: Windows path: %s\n", windows_path);
+    //printf("DEBUG: Ubuntu path: %s\n", ubuntu_path);
+    //printf("DEBUG: Windows path: %s\n", windows_path);
     
     linked_folders_t folders = {0};
     if (load_config(&folders) != 0) 
@@ -44,7 +44,7 @@ int handle_link_command(int argc, char *argv[])
         return 1;
     }
     
-    printf("DEBUG: Loaded %d existing links\n", folders.count);
+    //printf("DEBUG: Loaded %d existing links\n", folders.count);
     
     int existing_index = find_existing_link(&folders, ubuntu_path);
     if (existing_index >= 0) 
@@ -58,7 +58,7 @@ int handle_link_command(int argc, char *argv[])
         return display_link_already_exists(&folders.links[existing_index], windows_path, ubuntu_path);
     }
     
-    printf("DEBUG: Folders not already linked\n");
+    //printf("DEBUG: Folders not already linked\n");
     
     folder_link_t new_link = {0};
     if (create_folder_link(ubuntu_path, windows_path, &new_link) != 0) 
@@ -68,7 +68,7 @@ int handle_link_command(int argc, char *argv[])
         return 1;
     }
     
-    printf("DEBUG: Link created successfully\n");
+    //printf("DEBUG: Link created successfully\n");
     
     if (folders.count >= 50) 
     {
@@ -86,7 +86,7 @@ int handle_link_command(int argc, char *argv[])
         return 1;
     }
     
-    printf("DEBUG: Config saved\n");
+    //printf("DEBUG: Config saved\n");
     
     display_link_success(&new_link);
     
@@ -98,7 +98,7 @@ int handle_unlink_command(int argc, char *argv[])
 {
     const char *folder_path = NULL;
     
-    printf("DEBUG: Entered handle_unlink_command\n");
+    //printf("DEBUG: Entered handle_unlink_command\n");
     
     if (argc < 2) 
     {
@@ -108,7 +108,7 @@ int handle_unlink_command(int argc, char *argv[])
     
     folder_path = argv[1];
     
-    printf("DEBUG: Folder path to unlink: %s\n", folder_path);
+    //printf("DEBUG: Folder path to unlink: %s\n", folder_path);
     
     linked_folders_t folders = {0};
     if (load_config(&folders) != 0) 
@@ -195,7 +195,7 @@ int handle_links_list_command(int argc, char *argv[])
 {
     linked_folders_t folders = {0};
     
-    printf("DEBUG: Entered handle_links_list_command\n");
+    //printf("DEBUG: Entered handle_links_list_command\n");
     (void)argc;
     (void)argv;
     
@@ -225,7 +225,7 @@ int handle_sync_command(int argc, char *argv[])
     conflict_resolution_t *resolutions = NULL;
     int resolution_count = 0;
     
-    printf("DEBUG: Entered handle_sync_command\n");
+    //printf("DEBUG: Entered handle_sync_command\n");
     
     if (argc < 3) 
     {
@@ -236,8 +236,8 @@ int handle_sync_command(int argc, char *argv[])
     folder_path = argv[1];
     direction_str = argv[2];
     
-    printf("DEBUG: Folder path: %s\n", folder_path);
-    printf("DEBUG: Direction: %s\n", direction_str);
+    //printf("DEBUG: Folder path: %s\n", folder_path);
+    //printf("DEBUG: Direction: %s\n", direction_str);
     
     if (strcmp(direction_str, "to-windows") == 0) 
     {
@@ -269,7 +269,7 @@ int handle_sync_command(int argc, char *argv[])
     
     link = &folders.links[link_index];
     
-    printf("DEBUG: Found link: %s\n", link->id);
+    //printf("DEBUG: Found link: %s\n", link->id);
     
     changes = create_sync_changes();
     if (changes == NULL) 
@@ -282,7 +282,7 @@ int handle_sync_command(int argc, char *argv[])
     const char *source = (operation == SYNC_OP_TO_WINDOWS) ? link->ubuntu_path : link->windows_path;
     const char *target = (operation == SYNC_OP_TO_WINDOWS) ? link->windows_path : link->ubuntu_path;
     
-    printf("DEBUG: Checking if source folder is empty\n");
+    //printf("DEBUG: Checking if source folder is empty\n");
     int source_empty = is_folder_empty(source);
     if (source_empty == 1) 
     {
@@ -371,11 +371,11 @@ int handle_backups_list_command(int argc, char *argv[])
     linked_folders_t folders = {0};
     backup_list_t backup_list = {0};
     
-    printf("DEBUG: Entered handle_backups_list_command\n");
+    //printf("DEBUG: Entered handle_backups_list_command\n");
     
     if (argc < 1) 
     {
-        printf("DEBUG: No link_id provided, showing all backups\n");
+        //printf("DEBUG: No link_id provided, showing all backups\n");
         
         if (load_config(&folders) != 0) 
         {
@@ -405,7 +405,7 @@ int handle_backups_list_command(int argc, char *argv[])
     }
     
     const char *link_id = argv[0];
-    printf("DEBUG: Listing backups for link: %s\n", link_id);
+    //printf("DEBUG: Listing backups for link: %s\n", link_id);
     
     memset(&backup_list, 0, sizeof(backup_list));
     if (list_backups(link_id, &backup_list) != 0) 
@@ -427,7 +427,7 @@ int handle_backup_command(int argc, char *argv[])
     folder_link_t *link = NULL;
     char backup_id[256];
     
-    printf("DEBUG: Entered handle_backup_command\n");
+    //printf("DEBUG: Entered handle_backup_command\n");
     
     if (argc < 1) 
     {
@@ -436,7 +436,7 @@ int handle_backup_command(int argc, char *argv[])
     }
     
     target_path = argv[0];
-    printf("DEBUG: Backing up target: %s\n", target_path);
+    //printf("DEBUG: Backing up target: %s\n", target_path);
     
     if (load_config(&folders) != 0) 
     {
@@ -460,7 +460,7 @@ int handle_backup_command(int argc, char *argv[])
         return 1;
     }
     
-    printf("DEBUG: Found link: %s\n", link->id);
+    //printf("DEBUG: Found link: %s\n", link->id);
 
     char numeric_link_id[256];
     const char *id_ptr = link->id;
@@ -489,7 +489,7 @@ int handle_restore_command(int argc, char *argv[])
 {
     const char *backup_id = NULL;
     
-    printf("DEBUG: Entered handle_restore_command\n");
+    //printf("DEBUG: Entered handle_restore_command\n");
     
     if (argc < 1) 
     {
@@ -499,7 +499,7 @@ int handle_restore_command(int argc, char *argv[])
     }
     
     backup_id = argv[0];
-    printf("DEBUG: Restoring backup: %s\n", backup_id);
+    //printf("DEBUG: Restoring backup: %s\n", backup_id);
     
     int result = restore_backup(backup_id);
     
@@ -521,7 +521,7 @@ int handle_backups_clean_command(int argc, char *argv[])
 {
     const char *link_id = NULL;
     
-    printf("DEBUG: Entered handle_backups_clean_command\n");
+    //printf("DEBUG: Entered handle_backups_clean_command\n");
     
     if (argc < 1) 
     {
@@ -530,7 +530,7 @@ int handle_backups_clean_command(int argc, char *argv[])
     }
     
     link_id = argv[0];
-    printf("DEBUG: Cleaning backups for link: %s\n", link_id);
+    //printf("DEBUG: Cleaning backups for link: %s\n", link_id);
     
     int result = cleanup_backups(link_id);
     
@@ -552,7 +552,7 @@ int handle_backups_clean_command(int argc, char *argv[])
 
 int handle_log_list_command(int argc, char *argv[]) 
 {
-    printf("DEBUG: Entered handle_log_list_command\n");
+    //printf("DEBUG: Entered handle_log_list_command\n");
     (void)argc;
     (void)argv;
     
@@ -567,7 +567,7 @@ int handle_log_list_command(int argc, char *argv[])
 
 int handle_log_since_command(int argc, char *argv[]) 
 {
-    printf("DEBUG: Entered handle_log_since_command\n");
+    //printf("DEBUG: Entered handle_log_since_command\n");
     
     if (argc < 1) 
     {
@@ -577,7 +577,7 @@ int handle_log_since_command(int argc, char *argv[])
     }
     
     const char *date_str = argv[0];
-    printf("DEBUG: Listing logs since: %s\n", date_str);
+    //printf("DEBUG: Listing logs since: %s\n", date_str);
     
     if (list_logs_since(date_str) != 0) 
     {
@@ -590,11 +590,11 @@ int handle_log_since_command(int argc, char *argv[])
 
 int handle_log_track_command(int argc, char *argv[]) 
 {
-    printf("DEBUG: Entered handle_log_track_command\n");
+    //printf("DEBUG: Entered handle_log_track_command\n");
     (void)argc;
     (void)argv;
     
-    printf("DEBUG: Starting log tracking\n");
+    //printf("DEBUG: Starting log tracking\n");
     
     if (track_logs() != 0) 
     {
@@ -607,7 +607,7 @@ int handle_log_track_command(int argc, char *argv[])
 
 int handle_log_latest_command(int argc, char *argv[]) 
 {
-    printf("DEBUG: Entered handle_log_latest_command\n");
+    //printf("DEBUG: Entered handle_log_latest_command\n");
     (void)argc;
     (void)argv;
     

@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../../include/filesystem.h"
+#include "../../include/sync.h"
 #include "../../include/cli.h"
 #include "../../include/converter.h"
-
 
 // ============ DISK / PARTITION CHECKING ============
 
@@ -428,6 +428,49 @@ int display_final_confirmation(sync_changes_t *changes, int has_conflicts)
     return 0;
 }
 
+int display_sync_summary(sync_changes_t *changes, const char *source, 
+                         const char *target, int error_count) 
+{
+    char new_size_str[32];
+    char modified_size_str[32];
+    char deleted_size_str[32];
+    
+    format_size(changes->new_size, new_size_str, sizeof(new_size_str));
+    format_size(changes->modified_size, modified_size_str, sizeof(modified_size_str));
+    format_size(changes->deleted_size, deleted_size_str, sizeof(deleted_size_str));
+    
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                   SYNC COMPLETED                           ║\n");
+    printf("╠════════════════════════════════════════════════════════════╣\n");
+    printf("║                                                            ║\n");
+    printf("║ Source:  %s\n", source);
+    printf("║ Target:  %s\n", target);
+    printf("║                                                            ║\n");
+    printf("║ Summary:                                                   ║\n");
+    printf("║  • Files added:    %3d files (%s)\n", changes->new_count, new_size_str);
+    printf("║  • Files updated:  %3d files (%s)\n", changes->modified_count, modified_size_str);
+    printf("║  • Files deleted:  %3d files (%s)\n", changes->deleted_count, deleted_size_str);
+    
+    if (error_count > 0) 
+    {
+        printf("║  • Errors:         %3d file(s)\n", error_count);
+        printf("║                                                            ║\n");
+        printf("║ Status: COMPLETED WITH ERRORS                             ║\n");
+    } 
+    else 
+    {
+        printf("║                                                            ║\n");
+        printf("║ Status: SUCCESS                                            ║\n");
+    }
+    
+    printf("║                                                            ║\n");
+    printf("╚════════════════════════════════════════════════════════════╝\n");
+    printf("\n");
+    
+    return 0;
+}
+
 int display_sync_error_prompt(const char *filepath, const char *error_msg)
 {
     char response[10];
@@ -563,9 +606,6 @@ int display_backup_list(const char *link_id, backup_list_t *backup_list)
     
     return 0;
 }
-
-
-
 
 int display_cleanup_confirmation(const char *link_id, int backup_count) 
 {

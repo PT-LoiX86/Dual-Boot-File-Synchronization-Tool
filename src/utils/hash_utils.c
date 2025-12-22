@@ -12,7 +12,7 @@ int calculate_file_md5(const char *filepath, char *md5_hash)
     FILE *fp;
     char temp_file[64] = {0};
     
-    printf("DEBUG: Calculating MD5 for: %s\n", filepath);
+    //printf("DEBUG: Calculating MD5 for: %s\n", filepath);
     
     if (filepath == NULL || md5_hash == NULL) 
     {
@@ -32,7 +32,7 @@ int calculate_file_md5(const char *filepath, char *md5_hash)
     
     if (result != 0) 
     {
-        printf("DEBUG: md5sum command failed\n");
+        //printf("DEBUG: md5sum command failed\n");
         unlink(temp_file);
         return -1;
     }
@@ -48,7 +48,7 @@ int calculate_file_md5(const char *filepath, char *md5_hash)
     if (fgets(buffer, sizeof(buffer), fp) != NULL) 
     {
         sscanf(buffer, "%32s", md5_hash);
-        printf("DEBUG: MD5 hash: %s\n", md5_hash);
+        //printf("DEBUG: MD5 hash: %s\n", md5_hash);
         fclose(fp);
         unlink(temp_file);
         return 0;
@@ -65,7 +65,7 @@ int compare_files(const char *file1, const char *file2, int *are_equal)
     char hash1[33] = {0};
     char hash2[33] = {0};
     
-    printf("DEBUG: Comparing files: %s vs %s\n", file1, file2);
+    //printf("DEBUG: Comparing files: %s vs %s\n", file1, file2);
     
     if (stat(file1, &stat1) != 0 || stat(file2, &stat2) != 0) 
     {
@@ -75,7 +75,7 @@ int compare_files(const char *file1, const char *file2, int *are_equal)
     if (stat1.st_size != stat2.st_size) 
     {
         *are_equal = 0;
-        printf("DEBUG: Files differ in size\n");
+        //printf("DEBUG: Files differ in size\n");
         return 0;
     }
     
@@ -87,11 +87,11 @@ int compare_files(const char *file1, const char *file2, int *are_equal)
         }
         
         *are_equal = (strcmp(hash1, hash2) == 0) ? 1 : 0;
-        printf("DEBUG: Hash comparison result: %s\n", *are_equal ? "equal" : "different");
+        //printf("DEBUG: Hash comparison result: %s\n", *are_equal ? "equal" : "different");
         return 0;
     }
     
     *are_equal = 1;
-    printf("DEBUG: Files appear identical (same size and timestamp)\n");
+    //printf("DEBUG: Files appear identical (same size and timestamp)\n");
     return 0;
 }
